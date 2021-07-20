@@ -1,0 +1,8 @@
+build/
+data/
+inference/
+mish-cuda/
+runs/
+__pycache__/
+.vscode/
+*.pyc
