@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 align='center'>Edit Users</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+                <th scope="col">Admin rights</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in userlist %}
+                <tr>
+                    <td>{{u.first_name}}</td>
+                    <td>{{u.email}}</td>
+                    <td>
+                        {% if u.is_main_admin or (u.is_admin and (user.id == u.id))%}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" checked disabled>
+                        {% elif u.is_admin and user.is_main_admin%}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" onClick='updateAdminRights({{u.id}})' checked>
+                        {% elif not u.is_admin and user.is_admin or user.is_main_admin%}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" onClick='updateAdminRights({{u.id}})'>
+                        {% else %}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" disabled>
+                        {% endif %}
+                        <label class="form-check-label" for="flexCheckDefault">
+                            Admin rights
+                        </label>
+                    </td>
+                    <td>
+                        {% if u.is_main_admin or (u.id == user.id)%}
+                            <button type="button" class="btn btn-danger" disabled>Delete</button>
+                        {% elif not u.is_main_admin and user.is_admin%}
+                            <button type="button" class="btn btn-danger" onClick='deleteUser({{u.id}})'>Delete</button>
+                        {% endif %}
+                        
+                    </td>
+                </tr>
+            {% endfor %}
+            
+        </tbody>
+    </table>
+{% endblock content %}

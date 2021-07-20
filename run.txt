@@ -1,0 +1,1 @@
+python detect.py --weights C:\Users\csokviktor\Desktop\maskdetectionv2\runs\exp1_maskdetv2_2\weights\best_maskdetv2_2_strip.pt --source 0 --iou-thres 0.3 --conf-thres 0.6 --device 0
