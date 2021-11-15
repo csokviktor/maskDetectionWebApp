@@ -1,11 +1,18 @@
 from initialization import create_app
-from detect import setupDetection
+from parallelDetect import setupDetection, initProcessObjects, processImage, runSubscriber
 import time
 
 app = create_app()
 
+managerList = None
+processedList = None
+managerLock = None
+processedLock = None
+pool = None
 
 if __name__ == '__main__':
-    setupDetection(source='0', weights=r"C:\Users\csokviktor\Desktop\egyetem\MSC\onlab\runs\exp1_maskdetv2_2\weights\best_maskdetv2_2_strip.pt",
-                            deviceName='0')
+    device, webcam, model, imgsz, names, colors, half = setupDetection(source = "client", weights= r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
+                        deviceName = '0')
+    managerList, processedList, managerLock, processedLock, pool = initProcessObjects()
+    processImage(managerList, processedList, processedLock, device, webcam, model, imgsz, names, colors, half)
     app.run()
