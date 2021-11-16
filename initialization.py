@@ -9,6 +9,9 @@ from flask_login import current_user
 db = SQLAlchemy()
 DB_NAME = 'database.db'
 
+procList = None
+procLock = None
+
 
 def deny_basic(f):
     @wraps(f)
@@ -21,7 +24,13 @@ def deny_basic(f):
     return wrapped
 
 
-def create_app():
+def create_app(list, lock):
+    global procList
+    global procLock
+
+    procList = list
+    procLock = lock
+
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'secretkey'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'

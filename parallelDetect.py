@@ -5,6 +5,8 @@ import shutil
 import time
 from pathlib import Path
 
+import multiprocessing
+
 import base64
 
 import cv2
@@ -162,14 +164,12 @@ def showProcessedImage(list, lock):
                             cv2.destroyAllWindows()
                             raise StopIteration
                 except Exception as e:
-                    print(e)
+                    continue
 
 
 def runSubscriber(ip, id, managerList, lock):
     it = LoadClient(ip=ip)
-    print("init")
     with lock:
-        print("inside lock")
         managerList.insert(id, "")
     for img_path, img, img0, valami, message in it:
         with lock:
@@ -187,7 +187,7 @@ def initProcessObjects():
 if __name__ == '__main__':
     import concurrent.futures
     import numpy as np
-    import multiprocessing
+    
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov4-p5.pt', help='model.pt path(s)')
