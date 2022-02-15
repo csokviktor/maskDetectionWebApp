@@ -157,11 +157,11 @@ class LoadImages:  # for inference
 
 #my own iterator class for the webstream
 class LoadClient:
-    def __init__(self, ip="tcp://*:5555", img_size=640):
+    def __init__(self, ip="tcp://127.0.0.1:5554", img_size=640):
         self.mode = 'images'
         self.img_size = img_size
-        context = zmq.Context()
-        self.socket = context.socket(zmq.SUB)
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.SUB)
         self.socket.setsockopt(zmq.CONFLATE, 1)
         self.socket.setsockopt_string(zmq.SUBSCRIBE, np.compat.unicode(''))
         
@@ -190,7 +190,7 @@ class LoadClient:
         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
         img = np.ascontiguousarray(img)
 
-        return img_path, img, img0, None
+        return img_path, img, img0, None, message
     
     def __len__(self):
         return 0
