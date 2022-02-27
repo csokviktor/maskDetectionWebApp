@@ -24,7 +24,7 @@ def deny_basic(f):
     return wrapped
 
 
-def create_app(list, lock):
+def create_app(list = None, lock = None):
     global procList
     global procLock
 
