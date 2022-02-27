@@ -1,7 +1,7 @@
 from flask import (Blueprint, render_template, request, flash, jsonify)
 from flask_login import login_required, current_user
 from initialization import deny_basic
-from modeldec import Note, User
+from modeldec import User
 from initialization import db
 import cv2
 import json
@@ -16,22 +16,6 @@ def home():
     os.environ['processingImage'] = 'stop'
     return render_template("home.html", user=current_user)
 
-
-@views.route('/delete-note', methods=['POST'])
-@deny_basic
-def delete_note():
-    os.environ['processingImage'] = 'stop'
-    data = json.loads(request.data)
-    noteID = data['noteID']
-    note = Note.query.get(noteID)
-    if note:
-        if note.user_id == current_user.id:
-            db.session.delete(note)
-            db.session.commit()
-    
-    return jsonify({})
-
-
 @views.route('/delete-user', methods=['POST'])
 @deny_basic
 def delete_user():
@@ -44,7 +28,6 @@ def delete_user():
         db.session.commit()
     
     return jsonify({})
-
 
 @views.route('/update-user', methods=['POST'])
 @deny_basic

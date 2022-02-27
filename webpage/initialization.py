@@ -40,10 +40,12 @@ def create_app(list = None, lock = None):
     from views import views
     from auth import auth
     from streaming import streaming
+    from camerahandling import camerahandling
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(streaming, url_prefix='/')
+    app.register_blueprint(camerahandling, url_prefix='/')
 
     from modeldec import User
 
