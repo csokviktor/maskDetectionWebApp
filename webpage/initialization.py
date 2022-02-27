@@ -45,7 +45,7 @@ def create_app(list = None, lock = None):
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(streaming, url_prefix='/')
 
-    from modeldec import User, Note
+    from modeldec import User
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
