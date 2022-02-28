@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import os
 from flask_login import LoginManager
 from functools import wraps
 from flask import redirect, url_for
 from flask_login import current_user
+
+import os
+import pathlib
 
 db = SQLAlchemy()
 DB_NAME = 'database.db'
@@ -62,7 +64,11 @@ def create_app(list = None, lock = None):
     return app
 
 def create_database(app):
-    if not os.path.exists(DB_NAME):
+    db_path = os.path.join(
+            pathlib.Path(__file__).parent.resolve(),
+            DB_NAME
+            )
+    if not os.path.exists(db_path):
         with app.app_context():
             db.create_all(app=app)
             print('Created Database!')
@@ -70,7 +76,7 @@ def create_database(app):
     else: #TODO: remove this part
         from modeldec import User
         from werkzeug.security import generate_password_hash
-        os.remove(DB_NAME)
+        os.remove(db_path)
         with app.app_context():
             db.create_all(app=app)
             new_user = User(email="csokviktor@gmail.com",

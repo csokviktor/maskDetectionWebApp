@@ -13,7 +13,6 @@ views = Blueprint('views', __name__)
 @views.route('/', methods=['POST', 'GET'])
 @login_required
 def home():
-    os.environ['processingImage'] = 'stop'
     return render_template("home.html", user=current_user)
 
 @views.route('/delete-user', methods=['POST'])
@@ -32,7 +31,6 @@ def delete_user():
 @views.route('/update-user', methods=['POST'])
 @deny_basic
 def update_user():
-    os.environ['processingImage'] = 'stop'
     data = json.loads(request.data)
     userID = data['userID']
     user = User.query.get(userID)

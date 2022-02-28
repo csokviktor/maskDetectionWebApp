@@ -12,7 +12,6 @@ auth = Blueprint('auth', __name__)
 @auth.route('/sign-up', methods=['GET', 'POST'])
 @deny_basic
 def sign_up():
-    os.environ['processingImage'] = 'stop'
     if request.method == 'POST':
         email = request.form.get('email')
         first_name = request.form.get('firstName')
@@ -50,7 +49,6 @@ def sign_up():
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    os.environ['processingImage'] = 'stop'
     if current_user.is_authenticated == True:
         return redirect(url_for('views.home'))
     if request.method == 'POST':
@@ -73,7 +71,6 @@ def login():
 
 @auth.route('/edit-user', methods=['GET', 'POST'])
 def edit_user():
-    os.environ['processingImage'] = 'stop'
     users = User.query.all()
     return render_template('edituser.html', user=current_user, userlist=users)
 
@@ -81,7 +78,6 @@ def edit_user():
 @auth.route('/logout')
 @login_required
 def logout():
-    os.environ['processingImage'] = 'stop'
     logout_user()
     flash("Logged out successfully.", category='success')
     return redirect(url_for('auth.login'))

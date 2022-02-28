@@ -3,9 +3,6 @@ from parallelDetect import (
     setupDetection, initProcessObjects,
     processImage, runSubscriber,
     showProcessedImage)
-import time
-
-#app = create_app()
 
 def startApp(list, lock):
     try:

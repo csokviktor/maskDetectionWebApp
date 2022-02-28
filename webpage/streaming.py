@@ -39,12 +39,3 @@ def video_feed1():
     return Response(
         streamVideo(pList, pLock, 0),
         mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@streaming.route('/video-feed2')
-@deny_basic
-@login_required
-def video_feed2():
-    os.environ['processingImage'] = 'running'
-    return Response(
-        streamVideo(pList, pLock, 1),
-        mimetype='multipart/x-mixed-replace; boundary=frame')
