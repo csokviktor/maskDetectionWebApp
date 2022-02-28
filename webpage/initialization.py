@@ -24,7 +24,7 @@ def deny_basic(f):
     return wrapped
 
 
-def create_app(list, lock):
+def create_app(list = None, lock = None):
     global procList
     global procLock
 
@@ -40,12 +40,14 @@ def create_app(list, lock):
     from views import views
     from auth import auth
     from streaming import streaming
+    from camerahandling import camerahandling
 
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(streaming, url_prefix='/')
+    app.register_blueprint(camerahandling, url_prefix='/')
 
-    from modeldec import User, Note
+    from modeldec import User
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
