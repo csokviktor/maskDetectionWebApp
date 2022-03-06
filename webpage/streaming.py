@@ -1,10 +1,8 @@
-from flask import (Response, Blueprint,
-                    render_template, request,
-                    flash, redirect, url_for)
+from flask import (
+    Response, Blueprint, render_template)
 from flask_login import login_required, current_user
 from initialization import deny_basic
-from initialization import procList as pList
-from initialization import procLock as pLock
+from initialization import procList, procLock
 import os
 import cv2
 
@@ -21,7 +19,6 @@ def streamVideo(list, lock, id):
         except Exception as e:
             print(e)
 
-
 @streaming.route('/watch-stream')
 @deny_basic
 @login_required
@@ -30,12 +27,11 @@ def watch_stream():
     #dataset = setupDataLoader(source = '0')
     return render_template("watchvideo.html", user=current_user)
 
-
 @streaming.route('/video-feed1')
 @deny_basic
 @login_required
 def video_feed1():
     os.environ['processingImage'] = 'running'
     return Response(
-        streamVideo(pList, pLock, 0),
+        streamVideo(procList, procLock, 0),
         mimetype='multipart/x-mixed-replace; boundary=frame')

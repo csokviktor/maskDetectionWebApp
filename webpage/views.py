@@ -1,14 +1,14 @@
-from flask import (Blueprint, render_template, request, flash, jsonify)
+from flask import (
+    Blueprint, render_template,
+    request, jsonify)
 from flask_login import login_required, current_user
 from initialization import deny_basic
 from modeldec import User
 from initialization import db
-import cv2
 import json
 import os
 
 views = Blueprint('views', __name__)
-
 
 @views.route('/', methods=['POST', 'GET'])
 @login_required
@@ -18,7 +18,6 @@ def home():
 @views.route('/delete-user', methods=['POST'])
 @deny_basic
 def delete_user():
-    os.environ['processingImage'] = 'stop'
     data = json.loads(request.data)
     userID = data['userID']
     user = User.query.get(userID)
@@ -37,5 +36,4 @@ def update_user():
     if user:
         user.is_admin = not user.is_admin
         db.session.commit()
-    
     return jsonify({})

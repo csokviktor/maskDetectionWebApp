@@ -1,13 +1,17 @@
-from flask import (Blueprint, render_template, request, flash, redirect, url_for)
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import (
+    Blueprint, render_template,
+    request, flash, redirect, url_for)
+from werkzeug.security import (
+    generate_password_hash, check_password_hash)
 from modeldec import User
 from initialization import db
-from flask_login import login_user, login_required, logout_user, current_user
+from flask_login import (
+    login_user, login_required,
+    logout_user, current_user)
 from initialization import deny_basic
 import os
 
 auth = Blueprint('auth', __name__)
-
 
 @auth.route('/sign-up', methods=['GET', 'POST'])
 @deny_basic
@@ -42,10 +46,8 @@ def sign_up():
             db.session.commit()
             flash('Account created.', category='success')
             return redirect(url_for('views.home'))
-    else:
-        pass
-    return render_template("signup.html", user=current_user)
 
+    return render_template("signup.html", user=current_user)
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -68,12 +70,10 @@ def login():
 
     return render_template("login.html", user=current_user)
 
-
 @auth.route('/edit-user', methods=['GET', 'POST'])
 def edit_user():
     users = User.query.all()
     return render_template('edituser.html', user=current_user, userlist=users)
-
 
 @auth.route('/logout')
 @login_required

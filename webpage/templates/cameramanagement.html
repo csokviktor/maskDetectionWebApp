@@ -1,1 +1,50 @@
 {% extends 'base.html' %}
+
+{% block content %}
+    <h1 align='center'>Camera Management</h1>
+
+    <div class="container">
+        <div class="row">
+          <div class="col">
+            <form method="POST">
+                <h4>Add Camera</h4>
+                </br>
+                <div class='form-group'>
+                    <label for='host'>Host Adress</label>
+                    <input type='text' class='form-control' id='host' name='host' placeholder='Enter Host of camera'></input>
+                </div>
+                <div class='form-group'>
+                    <label for='port'>Port</label>
+                    <input type='text' class='form-control' id='port' name='port' placeholder='Enter port of camera'></input>
+                </div>
+                </br>
+                <button type='submit' class='btn btn-primary'>Add Camera</button>
+            </form>
+          </div>
+          <div class="col">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Camera IP</th>
+                        <th scope="col">Camera Port</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cameras %}
+                        <tr>
+                            <td>{{c.ip}}</td>
+                            <td>{{c.ip}}</td>
+                            <td>
+                                <button type="button" class="btn btn-danger" onClick='deleteCamera({{c.id}})'>Remove</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+          </div>
+        </div>
+    </div>
+
+    
+{% endblock content %}

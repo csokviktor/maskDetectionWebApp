@@ -14,7 +14,6 @@ DB_NAME = 'database.db'
 procList = None
 procLock = None
 
-
 def deny_basic(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
@@ -25,8 +24,13 @@ def deny_basic(f):
         return f(*args, **kwargs)
     return wrapped
 
-
 def create_app(list = None, lock = None):
+    from views import views
+    from auth import auth
+    from streaming import streaming
+    from camerahandling import camerahandling
+    from modeldec import User
+
     global procList
     global procLock
 
@@ -39,22 +43,14 @@ def create_app(list = None, lock = None):
 
     db.init_app(app)
 
-    from views import views
-    from auth import auth
-    from streaming import streaming
-    from camerahandling import camerahandling
-
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
     app.register_blueprint(streaming, url_prefix='/')
-    app.register_blueprint(camerahandling, url_prefix='/')
-
-    from modeldec import User
+    app.register_blueprint(camerahandling, url_prefix='/')    
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
-
     @login_manager.user_loader
     def load_user(id):
         return User.query.get(int(id))
@@ -74,15 +70,21 @@ def create_database(app):
             print('Created Database!')
         
     else: #TODO: remove this part
-        from modeldec import User
+        from modeldec import User, Cameras
         from werkzeug.security import generate_password_hash
         os.remove(db_path)
         with app.app_context():
             db.create_all(app=app)
-            new_user = User(email="csokviktor@gmail.com",
-                                first_name="csokviktor",
-                                password=generate_password_hash("csokiviki", method='sha256'),
-                                is_admin=True,
-                                is_main_admin=True)
+            new_user = User(
+                email="csokviktor@gmail.com",
+                first_name="csokviktor",
+                password=generate_password_hash("csokiviki", method='sha256'),
+                is_admin=True,
+                is_main_admin=True)
+            new_camera = Cameras(
+                ip = "127.0.0.0",
+                port = "5554"
+            )
             db.session.add(new_user)
+            db.session.add(new_camera)
             db.session.commit()
