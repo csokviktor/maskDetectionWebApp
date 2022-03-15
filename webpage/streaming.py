@@ -2,17 +2,17 @@ from flask import (
     Response, Blueprint, render_template)
 from flask_login import login_required, current_user
 from initialization import deny_basic
-from initialization import procList, procLock
+from initialization import procDict, procLock
 import os
 import cv2
 
 streaming = Blueprint('streaming', __name__)
 
-def streamVideo(list, lock, id):
+def streamVideo(d, lock, id):
     while True:
         try:
             with lock:
-                _, buffer = cv2.imencode('.jpg', list[id])
+                _, buffer = cv2.imencode('.jpg', d[id])
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                         b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
@@ -33,5 +33,5 @@ def watch_stream():
 def video_feed1():
     os.environ['processingImage'] = 'running'
     return Response(
-        streamVideo(procList, procLock, 0),
+        streamVideo(procDict, procLock, 0),
         mimetype='multipart/x-mixed-replace; boundary=frame')
