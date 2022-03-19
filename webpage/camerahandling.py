@@ -1,10 +1,24 @@
 from flask import Blueprint, redirect, render_template, request, jsonify, flash, url_for
 from flask_login import login_required, current_user
 from initialization import deny_basic, db
+import initialization
 from modeldec import Cameras
+from parallelDetect import runSubscriber
 import json
+import threading
 
 camerahandling = Blueprint('camerahandling', __name__)
+
+def add_live_camera(id, ip, port):
+    host = f"{ip}:{port}"
+    t = threading.Thread(
+        target=runSubscriber,
+        args=(host, id, initialization.inpDict, initialization.inpLock))
+    t.start()
+    initialization.tasks[id] = t
+
+def stop_live_camera(id):
+    pass
 
 @camerahandling.route('/camera-management', methods=['GET', 'POST'])
 @login_required
@@ -14,7 +28,7 @@ def camera_management():
     if request.method == 'POST':
         ip = request.form.get('host')
         port = request.form.get('port')
-        camera = Cameras.query.filter_by(ip=ip).first()
+        camera = Cameras.query.filter_by(ip=ip, port=port).first()
         if camera:
             flash('Camera already exists with given Host', category='error')
         else:
@@ -24,6 +38,8 @@ def camera_management():
             )
             db.session.add(new_camera)
             db.session.commit()
+            commited_camera = Cameras.query.filter_by(ip=ip, port=port).first()
+            add_live_camera(commited_camera.id, commited_camera.ip, commited_camera.port)
             flash('New Camera added', category='success')
             return redirect(url_for('camerahandling.camera_management'))
 

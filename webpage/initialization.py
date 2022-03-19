@@ -8,6 +8,7 @@ from parallelDetect import runSubscriber
 
 import os
 import pathlib
+import threading
 
 db = SQLAlchemy()
 DB_NAME = 'database.db'
@@ -16,6 +17,7 @@ inpDict = None
 inpLock = None
 procDict = None
 procLock = None
+tasks = dict()
 
 def deny_basic(f):
     @wraps(f)
@@ -101,14 +103,12 @@ def create_database(app, user, cameras):
             db.session.commit()
 
 def init_cameras(app, cameras):
-    import threading
+    global tasks
     with app.app_context():
         cams = cameras.query.all()
-        tasks = list()
-        print(len(cams))
         for camera in cams:
             ip = f"{camera.ip}:{camera.port}"
             print(ip)
             t = threading.Thread(target=runSubscriber, args=(ip, camera.id, inpDict, inpLock))
             t.start()
-            tasks.append(t)
+            tasks[camera.id] = t

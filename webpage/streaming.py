@@ -2,7 +2,8 @@ from flask import (
     Response, Blueprint, render_template)
 from flask_login import login_required, current_user
 from initialization import deny_basic
-from initialization import procDict, procLock
+from initialization import procDict as procD
+from initialization import procLock as procL
 import os
 import cv2
 
@@ -33,5 +34,5 @@ def watch_stream():
 def video_feed1():
     os.environ['processingImage'] = 'running'
     return Response(
-        streamVideo(procDict, procLock, 0),
+        streamVideo(procD, procL, 0),
         mimetype='multipart/x-mixed-replace; boundary=frame')

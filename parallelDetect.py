@@ -181,6 +181,9 @@ def runSubscriber(ip, id, inputDict, lock):
     for img_path, img, img0, valami, message in it:
         try:
             with lock:
+                if inputDict[id] == -1:
+                    print('received break signal')
+                    return
                 inputDict[id] = message
         except Exception as e:
             print(e)
