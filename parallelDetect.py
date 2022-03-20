@@ -77,7 +77,7 @@ def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, n
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
         while True:
             for key, value in inputDict.items():
-                if value == "":
+                if value == "" or value == -1:
                     print(f"sanyika {key}")
                     continue
                 
@@ -145,17 +145,19 @@ def showImage(managerDict, lock):
     while True:
         with lock:
             if len(managerDict.keys()) == 0:
-                print("zero len")
                 continue
-            for key, data in managerDict.items():
-                if data != "":
-                    img = base64.b64decode(data)
-                    npimg = np.frombuffer(img, dtype=np.uint8)
-                    img0 = cv2.imdecode(npimg, 1)
-                    cv2.imshow(f"Frame {key}", img0)
-                    if cv2.waitKey(10) == ord('q'):  # q to quit
-                            cv2.destroyAllWindows()
-                            raise StopIteration
+            try:
+                for key, data in managerDict.items():
+                    if data != "" and data != -1:
+                        img = base64.b64decode(data)
+                        npimg = np.frombuffer(img, dtype=np.uint8)
+                        img0 = cv2.imdecode(npimg, 1)
+                        cv2.imshow(f"Frame {key}", img0)
+                        if cv2.waitKey(10) == ord('q'):  # q to quit
+                                cv2.destroyAllWindows()
+                                raise StopIteration
+            except Exception as e:
+                print(e)
 
 def showProcessedImage(showDict, lock):
     print("starting show image")
@@ -182,7 +184,6 @@ def runSubscriber(ip, id, inputDict, lock):
         try:
             with lock:
                 if inputDict[id] == -1:
-                    print('received break signal')
                     return
                 inputDict[id] = message
         except Exception as e:

@@ -18,7 +18,11 @@ def add_live_camera(id, ip, port):
     initialization.tasks[id] = t
 
 def stop_live_camera(id):
-    pass
+    with initialization.inpLock:
+        initialization.inpDict[id] = -1
+    initialization.tasks[id].join()
+    initialization.tasks.pop(id)
+    initialization.inpDict.pop(id)
 
 @camerahandling.route('/camera-management', methods=['GET', 'POST'])
 @login_required
@@ -55,6 +59,7 @@ def delete_user():
     cameraID = data['cameraID']
     camera = Cameras.query.get(cameraID)
     if camera:
+        stop_live_camera(camera.id)
         db.session.delete(camera)
         db.session.commit()
         flash('Camera deleted', category='success')
