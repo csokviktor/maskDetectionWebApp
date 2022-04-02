@@ -66,7 +66,7 @@ def setupDataLoader(webcam = False, source: str = "0", ip: str = ""):
     return dataset
 
 
-def processImage(managerList, processedList, lock, device, webcam, model, imgsz, names, colors, half, augment: bool = True, conf_thres: float = 0.4, iou_thres: float = 0.5, classes = None, agnostic_nms = True):
+def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, names, colors, half, augment: bool = True, conf_thres: float = 0.4, iou_thres: float = 0.5, classes = None, agnostic_nms = True):
     from utils.datasets import letterbox
     print("starting processing")
 
@@ -76,14 +76,14 @@ def processImage(managerList, processedList, lock, device, webcam, model, imgsz,
         img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
         _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
         while True:
-            for i, data in enumerate(managerList):
-                if data == "":
+            for key, value in inputDict.items():
+                if value == "" or value == -1:
                     continue
                 
-                img = base64.b64decode(data)
+                img = base64.b64decode(value)
                 npimg = np.frombuffer(img, dtype=np.uint8)
                 img0 = cv2.imdecode(npimg, 1)
-                path = f"Frame{i}"
+                path = f"Frame{key}"
 
                 # Padded resize
                 img = letterbox(img0, new_shape=imgsz)[0]
@@ -130,7 +130,7 @@ def processImage(managerList, processedList, lock, device, webcam, model, imgsz,
                                 label = '%s' % (names[int(cls)])
                                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
                     with lock:
-                        processedList[i] = im0
+                        processedDict[key] = im0
                     """
                     cv2.imshow(f"Frame {i}", im0)
                     if cv2.waitKey(1) == ord('q'):  # q to quit
@@ -139,55 +139,69 @@ def processImage(managerList, processedList, lock, device, webcam, model, imgsz,
                     
 
 
-def showImage(managerList, lock):
+def showImage(managerDict, lock):
     print("starting show image")
     while True:
         with lock:
-            for i, data in enumerate(managerList):
-                if data != "":
-                    img = base64.b64decode(data)
-                    npimg = np.frombuffer(img, dtype=np.uint8)
-                    img0 = cv2.imdecode(npimg, 1)
-                    cv2.imshow(f"Frame {i}", img0)
-                    if cv2.waitKey(10) == ord('q'):  # q to quit
-                            cv2.destroyAllWindows()
-                            raise StopIteration
+            if len(managerDict.keys()) == 0:
+                continue
+            try:
+                for key, data in managerDict.items():
+                    if data != "" and data != -1:
+                        img = base64.b64decode(data)
+                        npimg = np.frombuffer(img, dtype=np.uint8)
+                        img0 = cv2.imdecode(npimg, 1)
+                        cv2.imshow(f"Frame {key}", img0)
+                        if cv2.waitKey(10) == ord('q'):  # q to quit
+                                cv2.destroyAllWindows()
+                                raise StopIteration
+            except Exception as e:
+                print(e)
 
-def showProcessedImage(list, lock):
-    print("starting show image")
+def showProcessedImage(showDict, lock):
+    print("starting show image processed")
     while True:
         with lock:
-            for i, data in enumerate(list):
+            if len(showDict.keys()) == 0:
+                continue
+            for k, value in showDict.items():
                 try:
-                    cv2.imshow(f"Frame {i}", data)
+                    cv2.imshow(f"Frame {k}", value)
                     if cv2.waitKey(10) == ord('q'):  # q to quit
                             cv2.destroyAllWindows()
                             raise StopIteration
                 except Exception as e:
+                    print(e)
                     continue
 
 
-def runSubscriber(ip, id, managerList, lock):
+def runSubscriber(ip, id, inputDict, lock):
     it = LoadClient(ip=ip)
     with lock:
-        managerList.insert(id, "")
+        inputDict[id] = ""
     for img_path, img, img0, valami, message in it:
-        with lock:
-            managerList[id] = message
+        try:
+            with lock:
+                if inputDict[id] == -1:
+                    return
+                inputDict[id] = message
+        except Exception as e:
+            print(e)
+
 
 def initProcessObjects():
-    managerList = multiprocessing.Manager().list()
-    processedList = multiprocessing.Manager().list()
-    managerLock = multiprocessing.Manager().Lock()
+    inputDict = multiprocessing.Manager().dict()
+    processedDict = multiprocessing.Manager().dict()
+    inputLock = multiprocessing.Manager().Lock()
     processedLock = multiprocessing.Manager().Lock()
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
     
-    return managerList, processedList, managerLock, processedLock, pool
+    return inputDict, processedDict, inputLock, processedLock, pool
+
 
 if __name__ == '__main__':
     import concurrent.futures
-    import numpy as np
-    
+    import numpy as np    
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov4-p5.pt', help='model.pt path(s)')
@@ -206,19 +220,15 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     with torch.no_grad():
-        managerList, processedList, managerLock, processedLock, pool = initProcessObjects()
-        processedList.insert(0, None)
-        processedList.insert(1, None)
+        inputDict, processedDict, inputLock, processedLock, pool = initProcessObjects()
+        processedDict[0] = None
+        processedDict[1] = None
         print("Starting processes")
-        pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5554", 0, managerList, managerLock))
-        pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5555", 1, managerList, managerLock))
-        #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5556", 2, managerList, lock))
-        #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5557", 3, managerList, lock))
-        #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5558", 4, managerList, lock))
-        #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5559", 5, managerList, lock))
-        pool.apply_async(showProcessedImage, args=(processedList, processedLock))
+        pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5554", 0, inputDict, inputLock))
+        pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5555", 1, inputDict, inputLock))
+        pool.apply_async(showProcessedImage, args=(processedDict, processedLock))
         print("pools started")
         
         device, webcam, model, imgsz, names, colors, half = setupDetection(source = "client", weights= r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
                         deviceName = '0')
-        processImage(managerList, processedList, processedLock, device, webcam, model, imgsz, names, colors, half)
+        processImage(inputDict, processedDict, processedLock, device, webcam, model, imgsz, names, colors, half)

@@ -1,7 +1,5 @@
 from initialization import db
 from flask_login import UserMixin
-from sqlalchemy.sql import func
-
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +11,7 @@ class User(db.Model, UserMixin):
 
 class Cameras(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ip = db.Column(db.String(10000), unique=True)
+    ip = db.Column(db.String(10000))
     port = db.Column(db.String(10000))
 
 class Notifications(db.Model):

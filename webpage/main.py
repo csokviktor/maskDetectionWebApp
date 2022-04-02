@@ -1,29 +1,24 @@
 from initialization import create_app
 from parallelDetect import (
     setupDetection, initProcessObjects,
-    processImage, runSubscriber,
-    showProcessedImage)
+    processImage, showProcessedImage, showImage)
+
 import time
 
-#app = create_app()
-
-def startApp(list, lock):
+def startApp(inpDict, inpLock, procDict, procLock):
     try:
-        app = create_app(list, lock)
+        app = create_app(inpDict, inpLock, procDict, procLock)
         app.run()
     except Exception as e:
         print(e)
 
 if __name__ == '__main__':
-    #device, webcam, model, imgsz, names, colors, half = setupDetection(source = "client", weights= r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
-    #                    deviceName = '0')
-    #managerList, processedList, managerLock, processedLock, pool = initProcessObjects()
-    #processedList.insert(0, None)
-    #processedList.insert(1, None)
+    device, webcam, model, imgsz, names, colors, half = setupDetection(source = "client", weights= r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
+                        deviceName = '0')
+    inputDict, processedDict, inputLock, processedLock, pool = initProcessObjects()
     #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5554", 0, managerList, managerLock))
     #pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5555", 1, managerList, managerLock))
-    #pool.apply_async(startApp, args=(processedList, processedLock))
-    #pool.apply_async(showProcessedImage, args=(processedList, processedLock))
-    #processImage(managerList, processedList, processedLock, device, webcam, model, imgsz, names, colors, half)
-    app = create_app()
-    app.run()
+    pool.apply_async(startApp, args=(inputDict, inputLock, processedDict, processedLock))
+    pool.apply_async(showImage, args=(inputDict, inputLock))
+    pool.apply_async(showProcessedImage, args=(processedDict, processedLock))
+    processImage(inputDict, processedDict, processedLock, device, webcam, model, imgsz, names, colors, half)
