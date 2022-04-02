@@ -108,7 +108,7 @@ def init_cameras(app, cameras):
         cams = cameras.query.all()
         for camera in cams:
             ip = f"{camera.ip}:{camera.port}"
-            print(ip)
+            print(camera.id)
             t = threading.Thread(target=runSubscriber, args=(ip, camera.id, inpDict, inpLock))
             t.start()
             tasks[camera.id] = t

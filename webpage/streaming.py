@@ -1,19 +1,17 @@
 from flask import (
     Response, Blueprint, render_template)
 from flask_login import login_required, current_user
-from initialization import deny_basic
-from initialization import procDict as procD
-from initialization import procLock as procL
-import os
+from modeldec import Cameras
+import initialization
 import cv2
 
 streaming = Blueprint('streaming', __name__)
 
-def streamVideo(d, lock, id):
+def streamVideo(processedDict, lock, id: int):
     while True:
         try:
             with lock:
-                _, buffer = cv2.imencode('.jpg', d[id])
+                _, buffer = cv2.imencode('.jpg', processedDict[id])
                 frame = buffer.tobytes()
                 yield (b'--frame\r\n'
                         b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
@@ -21,18 +19,16 @@ def streamVideo(d, lock, id):
             print(e)
 
 @streaming.route('/watch-stream')
-@deny_basic
+@initialization.deny_basic
 @login_required
 def watch_stream():
-    global dataset
-    #dataset = setupDataLoader(source = '0')
-    return render_template("watchvideo.html", user=current_user)
+    cameraIDs = [camera.id for camera in Cameras.query.all()]
+    return render_template("watchvideo.html", user=current_user, cameraids=cameraIDs)
 
-@streaming.route('/video-feed1')
-@deny_basic
+@streaming.route('/video-feed/<int:id>')
+@initialization.deny_basic
 @login_required
-def video_feed1():
-    os.environ['processingImage'] = 'running'
+def video_feed(id):
     return Response(
-        streamVideo(procD, procL, 0),
+        streamVideo(initialization.procDict, initialization.procLock, id),
         mimetype='multipart/x-mixed-replace; boundary=frame')

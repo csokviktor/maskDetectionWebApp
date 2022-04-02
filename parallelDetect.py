@@ -78,7 +78,6 @@ def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, n
         while True:
             for key, value in inputDict.items():
                 if value == "" or value == -1:
-                    print(f"sanyika {key}")
                     continue
                 
                 img = base64.b64decode(value)
@@ -160,11 +159,10 @@ def showImage(managerDict, lock):
                 print(e)
 
 def showProcessedImage(showDict, lock):
-    print("starting show image")
+    print("starting show image processed")
     while True:
         with lock:
             if len(showDict.keys()) == 0:
-                print("zero len")
                 continue
             for k, value in showDict.items():
                 try:
@@ -173,6 +171,7 @@ def showProcessedImage(showDict, lock):
                             cv2.destroyAllWindows()
                             raise StopIteration
                 except Exception as e:
+                    print(e)
                     continue
 
 
