@@ -9,6 +9,7 @@ import threading
 
 camerahandling = Blueprint('camerahandling', __name__)
 
+
 def add_live_camera(id, ip, port):
     host = f"{ip}:{port}"
     t = threading.Thread(
@@ -17,12 +18,14 @@ def add_live_camera(id, ip, port):
     t.start()
     initialization.tasks[id] = t
 
+
 def stop_live_camera(id):
     with initialization.inpLock:
         initialization.inpDict[id] = -1
     initialization.tasks[id].join()
     initialization.tasks.pop(id)
     initialization.inpDict.pop(id)
+
 
 @camerahandling.route('/camera-management', methods=['GET', 'POST'])
 @login_required
@@ -51,6 +54,7 @@ def camera_management():
     return render_template(
         'cameramanagement.html', user=current_user,
         cameras=cameras)
+
 
 @camerahandling.route('/delete-camera', methods=['POST'])
 @deny_basic

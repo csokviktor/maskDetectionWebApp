@@ -6,14 +6,15 @@ from initialization import deny_basic
 from modeldec import User
 from initialization import db
 import json
-import os
 
 views = Blueprint('views', __name__)
+
 
 @views.route('/', methods=['POST', 'GET'])
 @login_required
 def home():
     return render_template("home.html", user=current_user)
+
 
 @views.route('/delete-user', methods=['POST'])
 @deny_basic
@@ -24,8 +25,9 @@ def delete_user():
     if user:
         db.session.delete(user)
         db.session.commit()
-    
+
     return jsonify({})
+
 
 @views.route('/update-user', methods=['POST'])
 @deny_basic

@@ -13,6 +13,7 @@ import os
 
 auth = Blueprint('auth', __name__)
 
+
 @auth.route('/sign-up', methods=['GET', 'POST'])
 @deny_basic
 def sign_up():
@@ -49,9 +50,10 @@ def sign_up():
 
     return render_template("signup.html", user=current_user)
 
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated == True:
+    if current_user.is_authenticated:
         return redirect(url_for('views.home'))
     if request.method == 'POST':
         email = request.form.get('email')
@@ -70,10 +72,12 @@ def login():
 
     return render_template("login.html", user=current_user)
 
+
 @auth.route('/edit-user', methods=['GET', 'POST'])
 def edit_user():
     users = User.query.all()
     return render_template('edituser.html', user=current_user, userlist=users)
+
 
 @auth.route('/logout')
 @login_required

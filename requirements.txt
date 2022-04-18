@@ -5,7 +5,7 @@ Cython
 matplotlib>=3.2.2
 numpy>=1.18.5
 opencv-python>=4.1.2
-Pillow
+Pillow~=8.4.0
 PyYAML>=5.3.1
 scipy>=1.4.1
 tensorboard>=2.2
@@ -26,3 +26,12 @@ pandas
 # extras --------------------------------------
 thop  # FLOPS computation
 pycocotools>=2.0  # COCO mAP
+
+torchvision~=0.10.0
+yaml~=0.2.5
+pyzmq~=19.0.2
+flask~=2.0.2
+werkzeug~=2.0.2
+sqlalchemy~=1.4.22
+setuptools~=58.0.4
+requests~=2.27.1

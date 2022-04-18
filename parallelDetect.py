@@ -1,20 +1,16 @@
 import argparse
 import os
-import platform
 import shutil
 import time
-from pathlib import Path
-
+import requests
+import json
 import multiprocessing
-
 import base64
-
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import numpy as np
 from numpy import random
-
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages, LoadClient
 from utils.general import (
@@ -22,10 +18,76 @@ from utils.general import (
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
-def setupDetection(imgs: int = 640, out: str = "inference/output",
-                    source: str = "0", weights: str = r"C:\Users\csokviktor\Desktop\maskdetectionv2\runs\exp1_maskdetv2_2\weights\best_maskdetv2_2_strip.pt",
-                    deviceName: str = "0"):
+def showImage(managerDict, lock):
+    print("starting show image")
+    while True:
+        with lock:
+            if len(managerDict.keys()) == 0:
+                continue
+            try:
+                for key, data in managerDict.items():
+                    if data != "" and data != -1:
+                        img = base64.b64decode(data)
+                        npimg = np.frombuffer(img, dtype=np.uint8)
+                        img0 = cv2.imdecode(npimg, 1)
+                        cv2.imshow(f"Frame {key}", img0)
+                        if cv2.waitKey(10) == ord('q'):  # q to quit
+                            cv2.destroyAllWindows()
+                            raise StopIteration
+            except Exception as e:
+                print(e)
 
+
+def showProcessedImage(showDict, lock):
+    print("starting show image processed")
+    while True:
+        with lock:
+            if len(showDict.keys()) == 0:
+                continue
+            for k, value in showDict.items():
+                try:
+                    cv2.imshow(f"Frame {k}", value)
+                    if cv2.waitKey(10) == ord('q'):  # q to quit
+                        cv2.destroyAllWindows()
+                        raise StopIteration
+                except Exception as e:
+                    print(e)
+                    continue
+
+
+def runSubscriber(ip, id, inputDict, lock):
+    it = LoadClient(ip=ip)
+    with lock:
+        inputDict[id] = ""
+    for img_path, img, img0, valami, message in it:
+        try:
+            with lock:
+                if inputDict[id] == -1:
+                    return
+                inputDict[id] = message
+        except Exception as e:
+            print(e)
+
+
+def initProcessObjects():
+    inputDict = multiprocessing.Manager().dict()
+    processedDict = multiprocessing.Manager().dict()
+    inputLock = multiprocessing.Manager().Lock()
+    processedLock = multiprocessing.Manager().Lock()
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
+    return inputDict, processedDict, inputLock, processedLock, pool
+
+
+def sendNotificationData(url, cameraID, status):
+    data = {'cameraID': cameraID, 'status': status}
+    requests.post(url, json=json.dumps(data))
+
+
+def setupDetection(imgs: int = 640, out: str = "inference/output",
+                   source: str = "0",
+                   weights: str = r"C:\Users\csokviktor\Desktop\maskdetectionv2\runs\exp1_maskdetv2_2\weights\best_maskdetv2_2_strip.pt",
+                   deviceName: str = "0"):
     # Initialize
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
 
@@ -40,7 +102,7 @@ def setupDetection(imgs: int = 640, out: str = "inference/output",
     imgsz = check_img_size(imgs, s=model.stride.max())  # check img_size
     if half:
         model.half()  # to FP16
-    
+
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in range(len(names))]
@@ -48,8 +110,7 @@ def setupDetection(imgs: int = 640, out: str = "inference/output",
     return device, webcam, model, imgsz, names, colors, half
 
 
-def setupDataLoader(webcam = False, source: str = "0", ip: str = ""):
-    
+def setupDataLoader(webcam=False, source: str = "0", ip: str = ""):
     # Set Dataloader
     if webcam:
         view_img = False
@@ -62,11 +123,13 @@ def setupDataLoader(webcam = False, source: str = "0", ip: str = ""):
     else:
         save_img = False
         dataset = LoadImages(source, img_size=imgsz)
-    
+
     return dataset
 
 
-def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, names, colors, half, augment: bool = True, conf_thres: float = 0.4, iou_thres: float = 0.5, classes = None, agnostic_nms = True):
+def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, names, colors, half,
+                 augment: bool = True, conf_thres: float = 0.4, iou_thres: float = 0.5, classes=None,
+                 agnostic_nms=True):
     from utils.datasets import letterbox
     print("starting processing")
 
@@ -79,7 +142,7 @@ def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, n
             for key, value in inputDict.items():
                 if value == "" or value == -1:
                     continue
-                
+
                 img = base64.b64decode(value)
                 npimg = np.frombuffer(img, dtype=np.uint8)
                 img0 = cv2.imdecode(npimg, 1)
@@ -122,87 +185,23 @@ def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, n
                         for c in det[:, -1].unique():
                             n = (det[:, -1] == c).sum()  # detections per class
                             s += '%g %ss, ' % (n, names[int(c)])  # add to string
+                            # add notification sending here
 
                         # Write results
                         for *xyxy, conf, cls in det:
-
                             if True:  # Add bbox to image
                                 label = '%s' % (names[int(cls)])
                                 plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=2)
-                    with lock:
-                        processedDict[key] = im0
-                    """
-                    cv2.imshow(f"Frame {i}", im0)
-                    if cv2.waitKey(1) == ord('q'):  # q to quit
-                        raise StopIteration
-                    """
-                    
-
-
-def showImage(managerDict, lock):
-    print("starting show image")
-    while True:
-        with lock:
-            if len(managerDict.keys()) == 0:
-                continue
-            try:
-                for key, data in managerDict.items():
-                    if data != "" and data != -1:
-                        img = base64.b64decode(data)
-                        npimg = np.frombuffer(img, dtype=np.uint8)
-                        img0 = cv2.imdecode(npimg, 1)
-                        cv2.imshow(f"Frame {key}", img0)
-                        if cv2.waitKey(10) == ord('q'):  # q to quit
-                                cv2.destroyAllWindows()
-                                raise StopIteration
-            except Exception as e:
-                print(e)
-
-def showProcessedImage(showDict, lock):
-    print("starting show image processed")
-    while True:
-        with lock:
-            if len(showDict.keys()) == 0:
-                continue
-            for k, value in showDict.items():
-                try:
-                    cv2.imshow(f"Frame {k}", value)
-                    if cv2.waitKey(10) == ord('q'):  # q to quit
-                            cv2.destroyAllWindows()
-                            raise StopIteration
-                except Exception as e:
-                    print(e)
-                    continue
-
-
-def runSubscriber(ip, id, inputDict, lock):
-    it = LoadClient(ip=ip)
-    with lock:
-        inputDict[id] = ""
-    for img_path, img, img0, valami, message in it:
-        try:
-            with lock:
-                if inputDict[id] == -1:
-                    return
-                inputDict[id] = message
-        except Exception as e:
-            print(e)
-
-
-def initProcessObjects():
-    inputDict = multiprocessing.Manager().dict()
-    processedDict = multiprocessing.Manager().dict()
-    inputLock = multiprocessing.Manager().Lock()
-    processedLock = multiprocessing.Manager().Lock()
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    
-    return inputDict, processedDict, inputLock, processedLock, pool
+                with lock:
+                    processedDict[key] = im0
+                """
+                cv2.imshow(f"Frame {i}", im0)
+                if cv2.waitKey(1) == ord('q'):  # q to quit
+                    raise StopIteration
+                """
 
 
 if __name__ == '__main__':
-    import concurrent.futures
-    import numpy as np    
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov4-p5.pt', help='model.pt path(s)')
     parser.add_argument('--source', type=str, default='inference/images', help='source')  # file/folder, 0 for webcam
@@ -228,7 +227,8 @@ if __name__ == '__main__':
         pool.apply_async(runSubscriber, args=("tcp://127.0.0.1:5555", 1, inputDict, inputLock))
         pool.apply_async(showProcessedImage, args=(processedDict, processedLock))
         print("pools started")
-        
-        device, webcam, model, imgsz, names, colors, half = setupDetection(source = "client", weights= r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
-                        deviceName = '0')
+
+        device, webcam, model, imgsz, names, colors, half = setupDetection(source="client",
+                                                                           weights=r"C:\Users\csokviktor\Desktop\maskdetection\best_maskdetv2_2_strip.pt",
+                                                                           deviceName='0')
         processImage(inputDict, processedDict, processedLock, device, webcam, model, imgsz, names, colors, half)
