@@ -1,10 +1,9 @@
 from flask import Blueprint, Response, request, jsonify
-from werkzeug.exceptions import BadRequest
-from sqlalchemy import inspect
+from sqlalchemy import desc
 from initialization import db
 from modeldec import Notifications
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 notification = Blueprint('notification', __name__)
@@ -22,6 +21,17 @@ def add_new_notification():
     res = all(elem in required_fields for elem in content.keys())
     if not res:
         return Response('Not all keys are satisfied', status=500)
+
+    # Get the latest notification from the same camera with same topic
+    latest_notification = Notifications.query.filter_by(
+        cameraID=content['cameraID'],
+        status=content['status']).order_by(desc(Notifications.ts)).first()
+    if latest_notification is not None:
+        # Drop notification if the same status from the same camera is
+        # less then 5s older
+        time_diff = (datetime.utcnow()-latest_notification.ts).total_seconds()
+        if time_diff < 5.0:
+            return Response(status=208)
 
     new_notification = Notifications(
         ts=datetime.utcnow(),

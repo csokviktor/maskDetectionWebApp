@@ -79,7 +79,7 @@ def initProcessObjects():
     return inputDict, processedDict, inputLock, processedLock, pool
 
 
-def sendNotificationData(url, cameraID, status):
+def sendNotificationData(cameraID, status, url: str = 'http://127.0.0.1:5000/new-notification'):
     data = {'cameraID': cameraID, 'status': status}
     requests.post(url, json=json.dumps(data))
 
@@ -186,6 +186,7 @@ def processImage(inputDict, processedDict, lock, device, webcam, model, imgsz, n
                             n = (det[:, -1] == c).sum()  # detections per class
                             s += '%g %ss, ' % (n, names[int(c)])  # add to string
                             # add notification sending here
+                            # sendNotificationData(key, names[int(c)])
 
                         # Write results
                         for *xyxy, conf, cls in det:

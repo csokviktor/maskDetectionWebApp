@@ -72,10 +72,7 @@ def create_app(
         return User.query.get(int(id))
 
     create_database(app, User, Cameras)
-    print("init")
     init_cameras(app, Cameras)
-    print("init done")
-
     return app
 
 
