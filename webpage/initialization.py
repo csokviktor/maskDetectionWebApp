@@ -1,3 +1,5 @@
+import json
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
@@ -18,6 +20,8 @@ inpLock = None
 procDict = None
 procLock = None
 tasks = dict()
+
+available_categories = list()
 
 
 def deny_basic(f):
@@ -40,11 +44,12 @@ def create_app(
     from streaming import streaming
     from camerahandling import camerahandling
     from notification import notification
-    from modeldec import User, Cameras
+    from modeldec import User, Cameras, SelectedCategories
     global inpDict
     global inpLock
     global procDict
     global procLock
+    global available_categories
 
     inpDict = inputDict
     inpLock = inputLock
@@ -54,6 +59,7 @@ def create_app(
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'secretkey'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
     db.init_app(app)
 
@@ -71,12 +77,15 @@ def create_app(
     def load_user(id):
         return User.query.get(int(id))
 
-    create_database(app, User, Cameras)
+    with open("./webpage/categories.json", mode='r', encoding='utf-8') as fp:
+        available_categories = json.load(fp).get('available_categories')
+
+    create_database(app, User, Cameras, SelectedCategories)
     init_cameras(app, Cameras)
     return app
 
 
-def create_database(app, user, cameras):
+def create_database(app, user, cameras, selectedcats):
     db_path = os.path.join(
         pathlib.Path(__file__).parent.resolve(),
         DB_NAME
@@ -101,8 +110,12 @@ def create_database(app, user, cameras):
                 ip="tcp://127.0.0.1",
                 port="5554"
             )
+            new_category = selectedcats(
+                category='demo'
+            )
             db.session.add(new_user)
             db.session.add(new_camera)
+            db.session.add(new_category)
             db.session.commit()
 
 

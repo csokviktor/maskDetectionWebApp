@@ -1,11 +1,13 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 import argparse
 import zmq
 import cv2
 import base64
 import threading
+import pyttsx3
 
 app = Flask(__name__)
+
 
 def transfer(ip):
     # initialize communication
@@ -28,7 +30,13 @@ def transfer(ip):
 
 @app.route("/play-notification", methods=['POST'])
 def play_notification():
-    pass
+    try:
+        content = request.get_json(force=True)
+    except Exception as e:
+        print(e)
+        return Response('JSON is not parsable', status=500)
+    pyttsx3.speak("I will speak this text")
+    return Response(status=200)
 
 
 if __name__ == "__main__":

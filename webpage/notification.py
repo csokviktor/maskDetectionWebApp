@@ -1,12 +1,26 @@
-from flask import Blueprint, Response, request, jsonify
+from flask import (
+    Blueprint, Response,
+    request, jsonify, render_template)
+from flask_login import current_user
 from sqlalchemy import desc
-from initialization import db
-from modeldec import Notifications
+from modeldec import Notifications, SelectedCategories
+from datetime import datetime
 
-from datetime import datetime, timedelta
+import initialization
 import json
 
 notification = Blueprint('notification', __name__)
+
+
+@notification.route('/notification-management', methods=['GET'])
+def notification_management():
+    current_categories = [cat.category for cat in SelectedCategories.query.all()]
+    return render_template(
+        'notificationmanagement.html',
+        user=current_user,
+        available_categories=initialization.available_categories,
+        current_categories=current_categories
+    )
 
 
 @notification.route('/new-notification', methods=['POST'])
@@ -38,8 +52,8 @@ def add_new_notification():
         cameraID=content['cameraID'],
         status=content['status']
     )
-    db.session.add(new_notification)
-    db.session.commit()
+    initialization.db.session.add(new_notification)
+    initialization.db.session.commit()
     return Response(status=200)
 
 
@@ -55,3 +69,10 @@ def get_notification():
             status=notification.status
         ).get_json())
     return Response(json.dumps(temp_dict), status=200, content_type='application/json')
+
+
+@notification.route('/update-notification-categories', methods=['POST'])
+def update_categories():
+    data = json.loads(request.data)
+    category = data['categoryName']
+    return jsonify({})

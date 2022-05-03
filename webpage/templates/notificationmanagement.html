@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 align='center'>Notification Management</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Category name</th>
+                <th scope="col">Selected</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in available_categories %}
+                <tr>
+                    <td>{{cat}}</td>
+                    <td>
+                        {% if cat in current_categories%}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" onClick='updateCategories({{cat}})' checked>
+                        {% else %}
+                            <input class="form-check-input" type="checkbox" value="" id="flexCheckCheckedDisabled" onClick='updateCategories({{cat}})'>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock content %}

@@ -22,3 +22,8 @@ class Notifications(db.Model):
     ts = db.Column(db.DateTime(timezone=True))
     cameraID = db.Column(db.Integer)
     status = db.Column(db.String(10000))
+
+
+class SelectedCategories(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(10000))

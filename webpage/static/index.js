@@ -18,3 +18,10 @@ function deleteCamera(cameraID){
         body: JSON.stringify({cameraID: cameraID})
     }).then((_res) => {window.location.href = '/camera-management';});
 }
+
+function updateCategories(categoryName){
+    fetch('/update-notification-categories', {
+        method: 'POST',
+        body: JSON.stringify({categoryName: categoryName})
+    }).then((_res) => {window.location.href = '/notification-management';});
+}
